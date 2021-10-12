@@ -6,11 +6,28 @@ from keras.layers import  Dense, Activation,GaussianNoise
 from sklearn.cluster import KMeans
 from loss import *
 import os
-from mask_estimation_utils import mask_generator, pretext_generator
 from sklearn.metrics import adjusted_rand_score
 np.set_printoptions(threshold=np.inf)
 
-bank= tf.Variable(tf.zeros([10, 5]),dtype=float)
+def mask_generator(p_m, x):
+    mask = np.random.binomial(1, p_m, x.shape)
+    return mask
+
+def pretext_generator(m, x):
+    # Parameters
+    no, dim = x.shape
+    # Randomly (and column-wise) shuffle data
+    x_bar = np.zeros([no, dim])
+    for i in range(dim):
+        idx = np.random.permutation(no)
+        x_bar[:, i] = x[idx, i]
+
+    # Corrupt samples
+    x_tilde = x * (1 - m) + x_bar * m
+    # Define new mask matrix
+    m_new = 1 * (x != x_tilde)
+
+    return m_new, x_tilde
 
 class autoencoder(object):
     def __init__(self, dataname,n, batch_size,k,temperature, dims, cluster_num, alpha,beta, gamma,learning_rate,noise_sd=1.5, init='glorot_uniform', act='relu'):#
