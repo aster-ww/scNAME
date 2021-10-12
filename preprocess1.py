@@ -64,7 +64,6 @@ def read_data(filename, sparsify = False, skip_exprs = False):
 
 def prepro(filename):
     data_path = "C:/Users/Reykjavik/PycharmProjects/VIME/VIME_softKmeans/dataset/" + filename + "/data.h5"
-    #data_path = "/data/wanh/project1/VIME_ZINB/dataset/" + filename + "/data.h5"
     mat, obs, var, uns = read_data(data_path, sparsify=False, skip_exprs=False)
     if isinstance(mat, np.ndarray):
         X = np.array(mat)
