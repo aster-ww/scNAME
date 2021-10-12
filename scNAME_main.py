@@ -1,6 +1,6 @@
-from preprocess1 import *
-from network import *
-from utils1 import *
+from scNAME_preprocess import *
+from scNAME_network import *
+from scNAME_utils import *
 import argparse
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
