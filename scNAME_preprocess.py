@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import utils1 as utils
+import scNAME_utils as utils
 import h5py
 import scipy as sp
 import numpy as np
