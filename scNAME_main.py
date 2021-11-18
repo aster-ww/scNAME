@@ -46,7 +46,10 @@ if __name__ == "__main__":
     X, Y = prepro(args.dataname)
     X = np.ceil(X).astype(int)
     count_X = X
-
+    shuffle_ix = np.random.permutation(np.arange(len(X)))
+    X = X[shuffle_ix]
+    Y = Y[shuffle_ix]
+    count_X = count_X[shuffle_ix]
     adata = sc.AnnData(X)
     adata.obs['Group'] = Y
     adata = normalize(adata, copy=True, highly_genes=args.highly_genes, size_factors=True,
