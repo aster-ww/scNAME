@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--dims", default = [1000, 256, 64,32])
     parser.add_argument("--highly_genes", default = 1000)
     parser.add_argument("--alpha",help='hyper-parameter to control the weights of l2 loss', default = 0.1,type = float)
-    parser.add_argument("--beta",help='hyper-parameter to control the weights of l3 loss', default=0, type=float)
+    parser.add_argument("--beta",help='hyper-parameter to control the weights of l3 loss', default=2.0, type=float)
     parser.add_argument("--gamma",help='hyper-parameter to control the weights of l4 loss', default =0.01, type = float)
     parser.add_argument("--learning_rate", default = 0.0001, type = float)
     parser.add_argument("--random_seed", default = random_seed)
