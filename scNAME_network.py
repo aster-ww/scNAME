@@ -4,7 +4,7 @@ import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
 from keras.layers import  Dense, Activation,GaussianNoise
 from sklearn.cluster import KMeans
-from loss import *
+from scNAME_loss import *
 import os
 from sklearn.metrics import adjusted_rand_score
 np.set_printoptions(threshold=np.inf)
