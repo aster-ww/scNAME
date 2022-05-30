@@ -3,39 +3,37 @@ tf.disable_eager_execution()
 import keras.backend as K
 import numpy as np
 
-MeanAct = lambda x: tf.clip_by_value(K.exp(x), 1e-5, 1e6)##无需参数，截断
-DispAct = lambda x: tf.clip_by_value(tf.nn.softplus(x), 1e-4, 1e4)##log(exp(features)+1)
+MeanAct = lambda x: tf.clip_by_value(K.exp(x), 1e-5, 1e6)
+DispAct = lambda x: tf.clip_by_value(tf.nn.softplus(x), 1e-4, 1e4)
 
-def _nan2zero(x):##NA转0
-    return tf.where(tf.is_nan(x), tf.zeros_like(x), x)##索引True的位置并替换成tf.zeros_like(x)(将x的元素都设置为0)，否则x
+def _nan2zero(x):
+    return tf.where(tf.is_nan(x), tf.zeros_like(x), x)
 
-def _nan2inf(x):##NA转inf
+def _nan2inf(x):
     return tf.where(tf.is_nan(x), tf.zeros_like(x)+np.inf, x)
 
 def _nelem(x):
-    nelem = tf.reduce_sum(tf.cast(~tf.is_nan(x), tf.float32))##把x的非NA值转为float32，并求和
-    return tf.cast(tf.where(tf.equal(nelem, 0.), 1., nelem), x.dtype)##把nelem为0的值改成1
+    nelem = tf.reduce_sum(tf.cast(~tf.is_nan(x), tf.float32))
+    return tf.cast(tf.where(tf.equal(nelem, 0.), 1., nelem), x.dtype)
 
 def _reduce_mean(x):
     nelem = _nelem(x)
     x = _nan2zero(x)
-    return tf.divide(tf.reduce_sum(x), nelem)##x/y
+    return tf.divide(tf.reduce_sum(x), nelem)
 
-def neighbor_k_original(k,bank,z):##z:batchsize*500 bank:n*500
-    result=tf.matmul(z, tf.transpose(bank))## batchsize*n
-    result=tf.nn.top_k(result, k=k)[1]## batchsize*k: index
+def neighbor_k_original(k,bank,z):
+    result=tf.matmul(z, tf.transpose(bank))
+    result=tf.nn.top_k(result, k=k)[1]
     #print('neighbor_k_original:',result)
     return result
 
-def distance_k_mask(batchsize,k,bank,z,z_tilde):##distract corresponding neighborhoods distance from z_tilde
+def distance_k_mask(batchsize,k,bank,z,z_tilde):
     h_index =tf.reshape(neighbor_k_original(k, bank, z),[-1,1])
     h_index=tf.cast(h_index, dtype=tf.int32)
     line = tf.reshape(tf.repeat(np.arange(batchsize), k),[-1,1])
     line = tf.cast(line, dtype=tf.int32)
-    # 将h_index和line合并
     index = tf.stack([line, h_index],1)
     index=tf.reshape(index,[k*batchsize,2])
-    # 使用tf.gather_nd来取值
 
     distance=tf.matmul(z_tilde, tf.transpose(bank))
     result = tf.gather_nd(distance, index)
@@ -44,13 +42,13 @@ def distance_k_mask(batchsize,k,bank,z,z_tilde):##distract corresponding neighbo
 def neighbor_k_original_loss(batchsize,k,bank,z,temperature):
     bank_normal = bank / tf.reshape(tf.norm(bank, axis=1), [-1, 1])
     z_normal = z / tf.reshape(tf.norm(z, axis=1), [-1, 1])
-    result = tf.matmul(z_normal, tf.transpose(bank_normal))  ## batchsize*n
+    result = tf.matmul(z_normal, tf.transpose(bank_normal)) 
     result = tf.nn.top_k(result, k=k)[0]
     numerator =tf.exp(result / temperature)
-    numerator = tf.reduce_sum(numerator,1) ## batchsize*k -> batchsize*1
-    denominator = tf.exp(tf.matmul(z_normal, tf.transpose(bank_normal)) / temperature) ## batchsize*n
-    denominator = tf.reduce_sum(denominator, 1)  ## batchsize*1
-    loss = tf.log(numerator / denominator)  ## batchsize*1
+    numerator = tf.reduce_sum(numerator,1) 
+    denominator = tf.exp(tf.matmul(z_normal, tf.transpose(bank_normal)) / temperature) 
+    denominator = tf.reduce_sum(denominator, 1) 
+    loss = tf.log(numerator / denominator) 
     loss = -tf.reduce_sum(loss, [0])
     return loss /batchsize
 def neighbor_k_loss(batchsize,k,bank,z,z_tilde,temperature):
@@ -58,21 +56,21 @@ def neighbor_k_loss(batchsize,k,bank,z,z_tilde,temperature):
     z_normal = z / tf.reshape(tf.norm(z, axis=1), [-1, 1])
     z_tilde_normal = z_tilde / tf.reshape(tf.norm(z_tilde, axis=1), [-1, 1])
     numerator =tf.exp(distance_k_mask(batchsize, k, bank_normal, z_normal, z_tilde_normal) / temperature)
-    numerator = tf.reduce_sum(numerator,1) ## batchsize*k -> batchsize*1
-    denominator = tf.exp(tf.matmul(z_tilde_normal, tf.transpose(bank_normal)) / temperature) ## batchsize*n
-    denominator = tf.reduce_sum(denominator, 1)  ## batchsize*1
-    loss = tf.log(numerator / denominator)  ## batchsize*1
+    numerator = tf.reduce_sum(numerator,1) 
+    denominator = tf.exp(tf.matmul(z_tilde_normal, tf.transpose(bank_normal)) / temperature) 
+    denominator = tf.reduce_sum(denominator, 1) 
+    loss = tf.log(numerator / denominator) 
     loss = -tf.reduce_sum(loss, [0])
     return loss /batchsize
 
 def numerator(batchsize, k, bank, z, z_tilde,temperature):
     numerator = tf.exp(distance_k_mask(batchsize, k, bank, z, z_tilde) / temperature)
-    numerator = tf.reduce_sum(numerator, 1)  ## batchsize*k -> batchsize*1
+    numerator = tf.reduce_sum(numerator, 1) 
     return numerator
 
 def denominator(bank,z_tilde,temperature):
-    denominator = tf.exp(tf.matmul(z_tilde, tf.transpose(bank)) / temperature)  ## batchsize*n
-    denominator = tf.reduce_sum(denominator, 1)  ## batchsize*1
+    denominator = tf.exp(tf.matmul(z_tilde, tf.transpose(bank)) / temperature) 
+    denominator = tf.reduce_sum(denominator, 1) 
     return denominator
 
 def NB(theta, y_true, y_pred, mask = False, debug = False, mean = False):##y_pred:mu? y_true:x
@@ -90,7 +88,7 @@ def NB(theta, y_true, y_pred, mask = False, debug = False, mean = False):##y_pre
         assert_ops = [tf.verify_tensor_all_finite(y_pred, 'y_pred has inf/nans'),
                       tf.verify_tensor_all_finite(t1, 't1 has inf/nans'),
                       tf.verify_tensor_all_finite(t2, 't2 has inf/nans')]
-        with tf.control_dependencies(assert_ops):##执行完assert_ops再final
+        with tf.control_dependencies(assert_ops):
             final = t1 + t2
     else:
         final = t1 + t2
@@ -112,7 +110,7 @@ def ZINB(pi, theta, y_true, y_pred, ridge_lambda, mean = True, mask = False, deb
 
     zero_nb = tf.pow(theta / (theta + y_pred + eps), theta)
     zero_case = -tf.log(pi + ((1.0 - pi) * zero_nb) + eps)
-    result = tf.where(tf.less(y_true, 1e-8), zero_case, nb_case)##y_ture<1e-8则0
+    result = tf.where(tf.less(y_true, 1e-8), zero_case, nb_case)
     ridge = ridge_lambda * tf.square(pi)
     result += ridge
     if mean:
@@ -124,21 +122,21 @@ def ZINB(pi, theta, y_true, y_pred, ridge_lambda, mean = True, mask = False, deb
     result = _nan2inf(result)
     return result
 
-def cal_latent(hidden, alpha):##由hidden和t生成p
+def cal_latent(hidden, alpha):
     sum_y = K.sum(K.square(hidden), axis=1)
     num = -2.0 * tf.matmul(hidden, tf.transpose(hidden)) + tf.reshape(sum_y, [-1, 1]) + sum_y
     num = num / alpha
     num = tf.pow(1.0 + num, -(alpha + 1.0) / 2.0)
-    zerodiag_num = num - tf.linalg.diag(tf.linalg.diag_part(num))##提取对角部分，生成对角阵
+    zerodiag_num = num - tf.linalg.diag(tf.linalg.diag_part(num))
     latent_p = K.transpose(K.transpose(zerodiag_num) / K.sum(zerodiag_num, axis=1))
     return num, latent_p
 
-def target_dis(latent_p):##由p生成q
+def target_dis(latent_p):
     latent_q = tf.transpose(tf.transpose(tf.pow(latent_p, 2)) / tf.reduce_sum(latent_p, axis = 1))
     return tf.transpose(tf.transpose(latent_q) / tf.reduce_sum(latent_q, axis = 1))
 
-def cal_dist(hidden, clusters):##L2(υ, Z) = \sum wir||Zi − υr||^2 clusters:center?
-    dist1 = K.sum(K.square(K.expand_dims(hidden, axis=1) - clusters), axis=2)##1的轴增加一维
+def cal_dist(hidden, clusters):
+    dist1 = K.sum(K.square(K.expand_dims(hidden, axis=1) - clusters), axis=2)
     temp_dist1 = dist1 - tf.reshape(tf.reduce_min(dist1, axis=1), [-1, 1])
     q = K.exp(-temp_dist1)
     q = K.transpose(K.transpose(q) / K.sum(q, axis=1))
