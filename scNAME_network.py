@@ -56,7 +56,6 @@ class autoencoder(object):
         self.batch = tf.placeholder(dtype=tf.int32, shape=(None, 1))
         self.m = tf.placeholder(dtype=tf.float32, shape=(None, self.dims[0]))
         self.bank = tf.get_variable(name=self.dataname + "/bank",dtype=tf.float32, initializer=tf.zeros([self.n, self.dims[-1]]),trainable=False)
-        #self.bank =tf.Variable(tf.zeros([n, self.dims[-1]]), trainable=False)
         self.clusters = tf.get_variable(name=self.dataname + "/clusters_rep", shape=[self.cluster_num, self.dims[-1]],
                                         dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
 
@@ -150,12 +149,12 @@ class autoencoder(object):
                     pre_index += 1
 
 
-    def funetrain(self, dataname,X,Y, count_X, p_m,size_factor, batch_size, funetrain_epoch,update_epoch,error):##基于预训练模型优化 微调
+    def funetrain(self, dataname,X,Y, count_X, p_m,size_factor, batch_size, funetrain_epoch,update_epoch,error):
         kmeans = KMeans(n_clusters=self.cluster_num, init="k-means++")
-        #self.latent_repre = np.nan_to_num(self.latent_repre)##使用0代替数组x中的nan元素，使用有限的数字代替inf元素(默认行为)
+        #self.latent_repre = np.nan_to_num(self.latent_repre)
         self.kmeans_pred = kmeans.fit_predict(self.bank_current)
         self.last_pred = np.copy(self.kmeans_pred)
-        self.sess.run(tf.assign(self.clusters, kmeans.cluster_centers_))##把A的值变为new_number
+        self.sess.run(tf.assign(self.clusters, kmeans.cluster_centers_))
         self.kmeans_ARI = np.around(adjusted_rand_score(Y, self.kmeans_pred), 5)
         self.Y_pred_best = self.kmeans_pred
         print("kmean_ARI:",self.kmeans_ARI)
@@ -180,7 +179,6 @@ class autoencoder(object):
                             feed_dict={self.x_origin: x_batch, self.x_count: count_X[last_index],self.batch:last_index_new,
                                    self.m : m_batch_new, self.x_tilde: x_tilde_batch,  self.sf_layer: size_factor[last_index]})
                    
-
                         self.Y_pred = np.argmin(latent_idx_cur, axis=1)
                         self.ARI = np.around(adjusted_rand_score(Y, self.Y_pred), 5)
                   
@@ -208,8 +206,6 @@ class autoencoder(object):
                             feed_dict={self.x_origin: x_batch, self.x_count: count_X[batch_index],self.batch:batch_index_new,
                                 self.m: m_batch_new, self.x_tilde: x_tilde_batch, self.sf_layer: size_factor[batch_index]})
                       
-
-
                         self.Y_pred = np.argmin(latent_idx_cur, axis=1)
                         self.ARI = np.around(adjusted_rand_score(Y, self.Y_pred), 5)
                                
