@@ -27,8 +27,8 @@ if __name__ == "__main__":
     parser.add_argument('--p_m',help='corruption probability for self-supervised learning',default=0.3, type=float)
     parser.add_argument('--k',help='top k most similar features to be neighborhoods',default=10,type=int)
     parser.add_argument('--temperature',help='hyper-parameter in l3 loss', default=0.7,type=float)
-    parser.add_argument("--dims", default = [1000, 256, 64,32])
-    parser.add_argument("--highly_genes", default = 1000)
+    parser.add_argument("--dims", default = [256, 64,32])
+    parser.add_argument("--highly_genes", default = 1000, type = int)
     parser.add_argument("--alpha",help='hyper-parameter to control the weights of l2 loss', default = 1.0,type = float)
     parser.add_argument("--beta",help='hyper-parameter to control the weights of l3 loss', default=0.1, type=float)
     parser.add_argument("--gamma",help='hyper-parameter to control the weights of l4 loss', default =0.1, type = float)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--update_epoch", default=50, type=int) 
     parser.add_argument("--noise_sd", default = 1.5)
     parser.add_argument("--error", default = 0.001, type = float)
-    parser.add_argument("--gpu_option", default ="2,3" )#"0"
+    parser.add_argument("--gpu_option", default ="2,3" )
 
     args = parser.parse_args()
     X, Y = prepro(args.dataname)
@@ -60,6 +60,7 @@ if __name__ == "__main__":
     high_variable = np.array(adata.var.highly_variable.index, dtype=np.int) 
     count_X = count_X[:, high_variable]
     size_factor = np.array(adata.obs.size_factors).reshape(-1, 1).astype(np.float32)
+    args.dims.insert(0,args.highly_genes)
     cluster_number = int(max(Y) - min(Y) + 1)
     result = np.zeros([len(args.random_seed) + 3, 7])
     idx = 0
