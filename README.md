@@ -28,7 +28,7 @@ scikit-learn >= 0.22.2<br>
 <br>
 h5py >= 3.6.0<br>
 
-## Referece
+## Reference
 Wan, H., Chen, L., & Deng, M. (2022). scNAME: Neighborhood contrastive clustering with ancillary mask estimation for scRNA-seq data. Bioinformatics.<br>
 
 If yu have any questions, please contact: wanhui1997@pku.edu.cn
