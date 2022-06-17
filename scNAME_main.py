@@ -20,7 +20,7 @@ def cluster_acc(y_true, y_pred):
     return sum([w[i, j] for i, j in ind]) * 1.0 / y_pred.size
 
 if __name__ == "__main__":
-    random_seed = [1111,2222,3333,4444, 5555, 6666, 7777, 8888, 9999, 10000]
+    random_seed = [1111]
 
     parser = argparse.ArgumentParser(description="train", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--dataname", default = "Muraro", type = str)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     size_factor = np.array(adata.obs.size_factors).reshape(-1, 1).astype(np.float32)
     args.dims.insert(0,args.highly_genes)
     cluster_number = int(max(Y) - min(Y) + 1)
-    result = np.zeros([len(args.random_seed) + 3, 7])
+    result = np.zeros([len(args.random_seed), 7])
     idx = 0
     for i in args.random_seed:
         np.random.seed([i])
@@ -84,14 +84,8 @@ if __name__ == "__main__":
         result[idx, 1:] = [kmeans_accuracy, kmeans_ARI, kmeans_NMI, accuracy, ARI, NMI]
         print(result)
         idx+=1
-    result[-3] = np.round(np.mean(result[0:len(args.random_seed), :], 0), 5)
-    result[-2] = np.round(np.median(result[0:len(args.random_seed), :], 0), 5)
-    result[-1] = np.round(np.std(result[0:len(args.random_seed), :], 0), 5)
     list = np.arange(1, len(args.random_seed) + 1)
     list = [str(i) for i in list]
-    list.append('mean')
-    list.append('median')
-    list.append('std')
     output = np.array(result)
     output = pd.DataFrame(output,columns=["dataset", "kmeans accuracy", "kmeans ARI", "kmeans NMI","accuracy", "ARI", "NMI"],index=list)
 
